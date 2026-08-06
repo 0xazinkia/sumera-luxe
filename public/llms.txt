@@ -1,0 +1,11 @@
+# Suméra Luxe — Bangladesh
+
+> Suméra Luxe is a quiet-luxury beauty house based in Dhaka, Bangladesh, serving Bangladeshi customers exclusively with curated fragrance, skincare, makeup, bath & body, and gift sets. All prices are in Bangladeshi Taka (BDT / Tk. ) and every order ships with cash on delivery inside Dhaka and across Bangladesh.
+
+## Pages
+
+- [Home](/): Featured collections, editorial hero, and new arrivals.
+- [Shop All](/products): The full Suméra Luxe collection, filterable by category.
+- [Categories](/categories): All curated collections at a glance.
+- [Track Order](/track): Look up an order status by phone number.
+- [Best Luxury Perfumes for Women](/blog/best-perfumes-for-women): Editorial guide to our top luxury fragrance picks.
