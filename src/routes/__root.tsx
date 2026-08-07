@@ -161,6 +161,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   errorComponent: ErrorComponent,
 });
 
+function isAdminTrackingRoute(pathname: string) {
+  return pathname.startsWith("/admin") || pathname === "/admin-access" || pathname === "/auth";
+}
+
 function TrackingRouterObserver() {
   const location = useRouterState({ select: (s) => s.location });
   const lastTrackedPathRef = useRef<string | null>(null);
@@ -171,6 +175,8 @@ function TrackingRouterObserver() {
 
   useEffect(() => {
     const pathname = typeof location.pathname === "string" ? location.pathname : String(location.pathname ?? "");
+    if (isAdminTrackingRoute(pathname)) return;
+
     const search = location.search == null
       ? ""
       : typeof location.search === "string"
@@ -194,11 +200,18 @@ function TrackingRouterObserver() {
 
 function GtmSnippetInjector() {
   const settings = useSiteSettings();
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const isAdmin = pathname.startsWith("/admin") || pathname === "/admin-access" || pathname === "/auth";
 
   useEffect(() => {
     const removeInjectedNodes = () => {
       document.querySelectorAll('[data-gtm-snippet="true"]').forEach((node) => node.remove());
     };
+
+    if (isAdmin) {
+      removeInjectedNodes();
+      return removeInjectedNodes;
+    }
 
     removeInjectedNodes();
 
@@ -228,7 +241,7 @@ function GtmSnippetInjector() {
     }
 
     return removeInjectedNodes;
-  }, [settings?.gtm_head_snippet, settings?.gtm_body_snippet]);
+  }, [isAdmin, settings?.gtm_head_snippet, settings?.gtm_body_snippet]);
 
   return null;
 }
