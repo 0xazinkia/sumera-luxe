@@ -12,6 +12,22 @@ interface Entry {
   image?: string;
 }
 
+function escapeXml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/\"/g, "&quot;")
+    .replace(/'/g, "&apos;");
+}
+
+function normalizeLastmod(lastmod?: string): string | undefined {
+  if (!lastmod) return undefined;
+  const date = new Date(lastmod);
+  if (Number.isNaN(date.getTime())) return undefined;
+  return date.toISOString();
+}
+
 export const Route = createFileRoute("/sitemap.xml")({
   server: {
     handlers: {
@@ -35,32 +51,47 @@ export const Route = createFileRoute("/sitemap.xml")({
             { auth: { storage: undefined, persistSession: false, autoRefreshToken: false } },
           );
           const [{ data: cats }, { data: prods }] = await Promise.all([
-            supa.from("categories").select("slug, updated_at, image_url").eq("is_active", true),
-            supa.from("products").select("slug, updated_at, image_url").eq("is_active", true),
+            supa.from("categories").select("slug, updated_at, image_url"),
+            supa.from("products").select("slug, updated_at, product_images(url)"),
           ]);
           for (const c of cats ?? []) {
-            if (c.slug) entries.push({ path: `/category/${c.slug}`, changefreq: "weekly", priority: "0.7", lastmod: (c as any).updated_at ?? undefined, image: (c as any).image_url ?? undefined });
+            if (c.slug) entries.push({ path: `/category/${c.slug}`, changefreq: "weekly", priority: "0.7", lastmod: normalizeLastmod((c as any).updated_at ?? undefined), image: (c as any).image_url ?? undefined });
           }
           for (const p of prods ?? []) {
-            if (p.slug) entries.push({ path: `/products/${p.slug}`, changefreq: "weekly", priority: "0.7", lastmod: (p as any).updated_at ?? undefined, image: (p as any).image_url ?? undefined });
+            if (p.slug) {
+              const productImage = Array.isArray((p as any).product_images)
+                ? (p as any).product_images[0]?.url
+                : undefined;
+              entries.push({ path: `/products/${p.slug}`, changefreq: "weekly", priority: "0.7", lastmod: normalizeLastmod((p as any).updated_at ?? undefined), image: productImage ?? undefined });
+            }
           }
-        } catch {
+        } catch (error) {
+          console.error("Sitemap product query failed:", error);
           // Best-effort: ship static entries if the DB is unreachable.
         }
 
-        const urls = entries.map((e) =>
-          [
+        const urls = entries.map((e) => {
+          const loc = `${BASE_URL}${escapeXml(e.path)}`;
+          const imageUrl = e.image
+            ? escapeXml(
+                (e.image as string).startsWith("/")
+                  ? `${BASE_URL}${(e.image as string)}`
+                  : (e.image as string),
+              )
+            : undefined;
+
+          return [
             `  <url>`,
-            `    <loc>${BASE_URL}${e.path}</loc>`,
-            e.lastmod ? `    <lastmod>${new Date(e.lastmod).toISOString()}</lastmod>` : null,
-            e.changefreq ? `    <changefreq>${e.changefreq}</changefreq>` : null,
-            e.priority ? `    <priority>${e.priority}</priority>` : null,
-            e.image
-              ? `    <image:image>\n      <image:loc>${(e.image as string).startsWith("/") ? BASE_URL + (e.image as string) : e.image}</image:loc>\n    </image:image>`
+            `    <loc>${loc}</loc>`,
+            e.lastmod ? `    <lastmod>${escapeXml(e.lastmod)}</lastmod>` : null,
+            e.changefreq ? `    <changefreq>${escapeXml(e.changefreq)}</changefreq>` : null,
+            e.priority ? `    <priority>${escapeXml(e.priority)}</priority>` : null,
+            imageUrl
+              ? `    <image:image>\n      <image:loc>${imageUrl}</image:loc>\n    </image:image>`
               : null,
             `  </url>`,
-          ].filter(Boolean).join("\n"),
-        );
+          ].filter(Boolean).join("\n");
+        });
 
         const xml = [
           `<?xml version="1.0" encoding="UTF-8"?>`,
