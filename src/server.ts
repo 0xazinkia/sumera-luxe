@@ -165,6 +165,54 @@ async function handleLocalDelete(request: Request) {
   return Response.json(results);
 }
 
+function isLocalHost(hostname: string) {
+  return hostname === "localhost" || hostname === "127.0.0.1" || hostname.startsWith("192.168.");
+}
+
+async function handleAdminAccess(request: Request) {
+  const url = new URL(request.url);
+  if (url.pathname !== "/api/admin-access" || request.method !== "POST") {
+    return null;
+  }
+
+  const body = await request.json().catch(() => null);
+  const key = typeof body?.key === "string" ? body.key.trim() : "";
+  const expected = String(process.env.ADMIN_SECRET_KEY ?? "").trim().replace(/^"|"$/g, "");
+
+  if (!key) {
+    return new Response(JSON.stringify({ error: "Access key required" }), {
+      status: 400,
+      headers: { "content-type": "application/json" },
+    });
+  }
+
+  if (!expected) {
+    console.error("[AdminAccess] Missing ADMIN_SECRET_KEY");
+    return new Response(JSON.stringify({ error: "Server not configured" }), {
+      status: 500,
+      headers: { "content-type": "application/json" },
+    });
+  }
+
+  if (key !== expected) {
+    return new Response(JSON.stringify({ error: "Invalid access key" }), {
+      status: 401,
+      headers: { "content-type": "application/json" },
+    });
+  }
+
+  const secure = !isLocalHost(url.hostname) ? "; Secure" : "";
+  const cookie = `admin_authorized=true; Path=/; SameSite=Strict; Max-Age=2592000${secure}`;
+
+  return new Response(JSON.stringify({ ok: true }), {
+    status: 200,
+    headers: {
+      "content-type": "application/json",
+      "set-cookie": cookie,
+    },
+  });
+}
+
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     try {
@@ -176,6 +224,11 @@ export default {
       const localDeleteResponse = await handleLocalDelete(request);
       if (localDeleteResponse) {
         return localDeleteResponse;
+      }
+
+      const adminAccessResponse = await handleAdminAccess(request);
+      if (adminAccessResponse) {
+        return adminAccessResponse;
       }
 
       const handler = await getServerEntry();
