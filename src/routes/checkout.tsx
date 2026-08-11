@@ -49,9 +49,27 @@ function Checkout() {
   const discountAmount = discount?.amount ?? 0;
   const total = Math.max(0, subtotal - discountAmount) + delivery;
   const [form, setForm] = useState({ name: "", phone: "", district: "", address: "" });
+  const [phoneError, setPhoneError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const shippingSignatureRef = useRef<string | null>(null);
   const beginCheckoutConsumedRef = useRef(false);
+
+  const normalizePhoneDigits = (phone: string) => phone.replace(/\D/g, "");
+  const isPhoneValid = (phone: string) => /^01\d{9}$/.test(normalizePhoneDigits(phone));
+  const onPhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setForm((f) => ({ ...f, phone: value }));
+    const digits = normalizePhoneDigits(value);
+    if (!value.trim()) {
+      setPhoneError(null);
+      return;
+    }
+    if (!/^01\d{9}$/.test(digits)) {
+      setPhoneError("Phone number must be 11 digits and start with 01.");
+      return;
+    }
+    setPhoneError(null);
+  };
 
   useEffect(() => {
     if (!form.district) {
@@ -147,6 +165,12 @@ function Checkout() {
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const digits = normalizePhoneDigits(form.phone);
+    if (!isPhoneValid(form.phone)) {
+      setPhoneError("Phone number must be 11 digits and start with 01.");
+      return;
+    }
+    setPhoneError(null);
     setSubmitting(true);
 
     // subtotal/total/discount_amount/unit_price are recomputed server-side in
@@ -188,6 +212,9 @@ function Checkout() {
         JSON.stringify({
           orderNumber,
           total: serverTotal,
+          customerName: form.name,
+          customerPhone: form.phone,
+          customerDistrict: form.district,
           items: items.map((item) => ({
             productId: item.productId,
             name: item.name,
@@ -203,6 +230,9 @@ function Checkout() {
         JSON.stringify({
           orderNumber,
           total: serverTotal,
+          customerName: form.name,
+          customerPhone: form.phone,
+          customerDistrict: form.district,
           items: items.map((item) => ({
             productId: item.productId,
             name: item.name,
@@ -237,7 +267,18 @@ function Checkout() {
               </div>
               <div className="block">
                 <label htmlFor="co-phone" className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Phone Number</label>
-                <input id="co-phone" name="phone" autoComplete="tel" required type="tel" value={form.phone} onChange={onChange("phone")} className="mt-1 w-full border border-border bg-background px-3 py-2.5" />
+                <input
+                  id="co-phone"
+                  name="phone"
+                  autoComplete="tel"
+                  required
+                  type="tel"
+                  inputMode="tel"
+                  value={form.phone}
+                  onChange={onPhoneChange}
+                  className="mt-1 w-full border border-border bg-background px-3 py-2.5"
+                />
+                {phoneError && <p className="mt-2 text-xs text-destructive">{phoneError}</p>}
               </div>
               <div className="block md:col-span-2">
                 <label htmlFor="co-district" className="text-xs uppercase tracking-[0.2em] text-muted-foreground">District</label>
