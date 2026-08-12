@@ -17,10 +17,18 @@ export function normalizePhone(phone: string): string {
   return phone.replace(/[^\d]/g, "");
 }
 
+export function normalizeIdentifier(value: string): string {
+  return value.trim().toLowerCase().replace(/\s+/g, " ");
+}
+
 export async function hashEmail(email: string): Promise<string> {
   return sha256Hex(normalizeEmail(email));
 }
 
 export async function hashPhone(phone: string): Promise<string> {
   return sha256Hex(normalizePhone(phone));
+}
+
+export async function hashIdentifier(value: string): Promise<string> {
+  return sha256Hex(normalizeIdentifier(value));
 }

@@ -5,6 +5,10 @@ export type MetaEventName = "Purchase" | "InitiateCheckout" | "AddToCart" | "Vie
 export type IncomingUserData = {
   email?: string | null;
   phone?: string | null;
+  first_name?: string | null;
+  last_name?: string | null;
+  city?: string | null;
+  country?: string | null;
   fbp?: string | null;
   fbc?: string | null;
 };
@@ -38,6 +42,10 @@ export type CapiRequestBody = {
 export type HashedUserData = {
   em?: string[];
   ph?: string[];
+  fn?: string[];
+  ln?: string[];
+  ct?: string[];
+  country?: string[];
   fbp?: string;
   fbc?: string;
   client_ip_address?: string;

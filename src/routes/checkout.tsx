@@ -55,6 +55,27 @@ function Checkout() {
   const beginCheckoutConsumedRef = useRef(false);
 
   const normalizePhoneDigits = (phone: string) => phone.replace(/\D/g, "");
+  const normalizeBangladeshPhone = (phone: string) => {
+    const digits = normalizePhoneDigits(phone);
+    if (digits.startsWith("0") && digits.length === 11) return `880${digits.slice(1)}`;
+    if (digits.startsWith("880") && digits.length === 13) return digits;
+    if (digits.length === 11 && digits.startsWith("01")) return `880${digits}`;
+    return digits;
+  };
+
+  const META_CAPI_COUNTRY = "bd";
+  const normalizeCity = (city: string) => city.trim().toLowerCase();
+
+  const splitCustomerName = (fullName: string) => {
+    const cleaned = fullName.trim().replace(/\s+/g, " ");
+    const parts = cleaned.split(" ").filter(Boolean);
+
+    if (parts.length === 0) return { firstName: "", lastName: "" };
+    if (parts.length === 1) return { firstName: parts[0], lastName: "" };
+    if (parts.length === 2) return { firstName: parts[0], lastName: parts[1] };
+    return { firstName: `${parts[0]} ${parts[1]}`, lastName: parts.slice(2).join(" ") };
+  };
+
   const isPhoneValid = (phone: string) => /^01\d{9}$/.test(normalizePhoneDigits(phone));
   const onPhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -207,6 +228,10 @@ function Checkout() {
     const serverTotal = Number(row?.total ?? total);
 
     if (typeof window !== "undefined") {
+      const { firstName, lastName } = splitCustomerName(form.name);
+      const normalizedPhone = normalizeBangladeshPhone(form.phone);
+      const normalizedCity = normalizeCity(form.district);
+
       window.sessionStorage.setItem(
         "sumera_tracking_last_purchase",
         JSON.stringify({
@@ -215,6 +240,11 @@ function Checkout() {
           customerName: form.name,
           customerPhone: form.phone,
           customerDistrict: form.district,
+          customerFirstName: firstName,
+          customerLastName: lastName,
+          customerPhoneNormalized: normalizedPhone,
+          customerCity: normalizedCity,
+          customerCountry: META_CAPI_COUNTRY,
           items: items.map((item) => ({
             productId: item.productId,
             name: item.name,
@@ -233,6 +263,11 @@ function Checkout() {
           customerName: form.name,
           customerPhone: form.phone,
           customerDistrict: form.district,
+          customerFirstName: firstName,
+          customerLastName: lastName,
+          customerPhoneNormalized: normalizedPhone,
+          customerCity: normalizedCity,
+          customerCountry: META_CAPI_COUNTRY,
           items: items.map((item) => ({
             productId: item.productId,
             name: item.name,

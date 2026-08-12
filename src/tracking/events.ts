@@ -129,6 +129,7 @@ export function buildPurchasePayload(
   items: CartLineLike[],
   brandName?: string | null,
   pageLocation?: string,
+  extra?: { user_data?: Record<string, unknown> },
 ) {
   const trackingItems: TrackingItem[] = items.map((item) => ({
     item_id: item.productId,
@@ -146,5 +147,6 @@ export function buildPurchasePayload(
     value: total,
     transaction_id: orderNumber || undefined,
     affiliation: brandName ?? "Suméra Luxe",
+    ...(extra?.user_data ? { user_data: extra.user_data } : {}),
   };
 }

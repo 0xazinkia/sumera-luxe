@@ -1,5 +1,5 @@
 import { META_GRAPH_API_VERSION } from "./config.ts";
-import { hashEmail, hashPhone } from "./hash.ts";
+import { hashEmail, hashPhone, hashIdentifier } from "./hash.ts";
 import type { CapiRequestBody, HashedUserData, MetaEventPayload } from "./types.ts";
 import { debugLog } from "./utils.ts";
 
@@ -13,6 +13,10 @@ export async function buildUserData(
 
   if (input.email) userData.em = [await hashEmail(input.email)];
   if (input.phone) userData.ph = [await hashPhone(input.phone)];
+  if (input.first_name) userData.fn = [await hashIdentifier(input.first_name)];
+  if (input.last_name) userData.ln = [await hashIdentifier(input.last_name)];
+  if (input.city) userData.ct = [await hashIdentifier(input.city)];
+  if (input.country) userData.country = [await hashIdentifier(input.country)];
   // fbp/fbc/ip/user-agent are identifiers, not raw PII — sent unhashed per Meta spec.
   if (input.fbp) userData.fbp = input.fbp;
   if (input.fbc) userData.fbc = input.fbc;

@@ -183,6 +183,6 @@ export function pushDataLayer(eventName: TrackingEventName, payload: TrackingEve
     content_type: event.content_type,
     num_items: numItems,
     transaction_id: event.transaction_id,
-  });
+  }, payload.user_data ?? {});
   return event;
 }

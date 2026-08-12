@@ -40,6 +40,10 @@ function getCookie(name: string): string | null {
 export type MetaCapiUserData = {
   email?: string | null;
   phone?: string | null;
+  first_name?: string | null;
+  last_name?: string | null;
+  city?: string | null;
+  country?: string | null;
 };
 
 // Fire-and-forget: CAPI failures must never interrupt the browser tracking flow.
@@ -65,6 +69,10 @@ export function dispatchMetaCapiEvent(
     user_data: {
       email: userData.email ?? undefined,
       phone: userData.phone ?? undefined,
+      first_name: userData.first_name ?? undefined,
+      last_name: userData.last_name ?? undefined,
+      city: userData.city ?? undefined,
+      country: userData.country ?? undefined,
       fbp: getCookie("_fbp"),
       fbc: getCookie("_fbc"),
     },

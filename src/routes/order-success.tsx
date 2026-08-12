@@ -56,6 +56,15 @@ function OrderSuccess() {
           })),
           settings?.brand_name ?? null,
           typeof window !== "undefined" ? window.location.href : undefined,
+          {
+            user_data: {
+              phone: pending.customerPhoneNormalized ?? undefined,
+              first_name: pending.customerFirstName ?? undefined,
+              last_name: pending.customerLastName ?? undefined,
+              city: pending.customerCity ?? undefined,
+              country: pending.customerCountry ?? "bd",
+            },
+          },
         ),
       );
       window.sessionStorage.removeItem("sumera_tracking_pending_purchase");
